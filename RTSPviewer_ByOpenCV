@@ -41,6 +41,7 @@ CAMERAS = [
     }
 ]
 
+
 # =========================
 # Class
 # =========================
@@ -77,7 +78,6 @@ class RtspCamera:
         self._connect()
 
         while self.running:
-            # Connection Refresh
             if time.time() - self.last_connect_time > self.refresh_interval:
                 print(f"[Camera {self.index}] Refreshing RTSP connection...")
                 self._connect()
@@ -113,11 +113,12 @@ class App:
         self.photo_images = []
 
         self._init_cameras()
-        self._create_grid_labels()
+        self._create_camera_frames()
 
         self.update_interval_ms = 30
         self._update_frames()
 
+        self.fullscreen_index = None
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def _init_cameras(self):
@@ -129,18 +130,68 @@ class App:
 
     def _build_rtsp_url(self, cam):
         return f"rtsp://{cam['user']}:{cam['password']}@{cam['ip']}:554/{cam['path']}"
+    
+    def toggle_fullscreen(self, index):
 
-    def _create_grid_labels(self):
+        if self.fullscreen_index is not None:
+            self.restore_layout()
+            self.fullscreen_index = None
+            return
+
+        # Get Window Size
+        self.root.update_idletasks()
+        win_w = self.root.winfo_width()
+        win_h = self.root.winfo_height()
+        
+        self.fullscreen_index = index
+
+        for i, cam in enumerate(CAMERAS):
+            frame = cam["frame"]
+
+            if i == index:
+                frame.place(
+                    x=0,
+                    y=0,
+                    width=win_w,
+                    height=win_h
+                )
+            else:
+                frame.place_forget()
+
+        # Esc Key Event
+        self.root.bind("<Escape>", lambda e: self.toggle_fullscreen(index))
+
+    def restore_layout(self):
         for cam in CAMERAS:
-            label = ttk.Label(self.root, text="Connecting...", anchor="center")
-            label.place(
+            frame = cam["frame"]
+            frame.place(
                 x=cam["left"],
                 y=cam["top"],
                 width=cam["width"],
                 height=cam["height"]
             )
+
+        self.root.unbind("<Escape>")
+
+    def _create_camera_frames(self):
+        for i, cam in enumerate(CAMERAS):
+            frame = tk.Frame(self.root, bg="#222222")
+            frame.place(
+                x=cam["left"],
+                y=cam["top"],
+                width=cam["width"],
+                height=cam["height"]
+            )
+            cam["frame"] = frame
+
+            label = ttk.Label(frame, text="Connecting...", anchor="center")
+            label.place(x=0, y=0, relwidth=1, relheight=1)
             cam["label"] = label
+
+            label.bind("<Button-1>", lambda e, idx=i: self.toggle_fullscreen(idx))
+
             self.photo_images.append(None)
+
 
     def _update_frames(self):
         for i, cam in enumerate(CAMERAS):
@@ -149,7 +200,14 @@ class App:
             if frame is None:
                 continue
 
-            resized = cv2.resize(frame, (cam["width"], cam["height"]))
+            # On Full screen
+            if self.fullscreen_index == i:
+                win_w = self.root.winfo_width()
+                win_h = self.root.winfo_height()
+                resized = cv2.resize(frame, (win_w, win_h))
+            else:
+                resized = cv2.resize(frame, (cam["width"], cam["height"]))
+
             img = Image.fromarray(resized)
             photo = ImageTk.PhotoImage(image=img)
 
@@ -157,6 +215,7 @@ class App:
             cam["label"].configure(image=photo, text="")
 
         self.root.after(self.update_interval_ms, self._update_frames)
+
 
     def on_close(self):
         for cam in self.cameras:
