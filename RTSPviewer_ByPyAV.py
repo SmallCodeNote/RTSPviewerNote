@@ -4,6 +4,21 @@ import av
 import threading
 import time
 from PIL import Image, ImageTk, ImageDraw, ImageFont
+import json
+import os
+
+# =========================
+# Camera Config Loader
+# =========================
+
+def load_camera_config(path="cameras.json"):
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Camera config file not found: {path}")
+
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+CAMERAS = load_camera_config()
 
 # =========================
 # Parameter
@@ -14,31 +29,6 @@ WINDOW_HEIGHT = 720
 
 RTSP_REFRESH_INTERVAL = 30
 RECONNECT_INTERVAL = 10 
-
-CAMERAS = [
-    {
-        "ip": "192.168.xxx.yyy",
-        "user": "admin",
-        "password": "xxxxx",
-        "path": "",
-        "top": 0,
-        "left": 0,
-        "width": 640,
-        "height": 360,
-        "label": None
-    },
-    {
-        "ip": "192.168.xxx.zzz",
-        "user": "admin",
-        "password": "yyyyy",
-        "path": "11",
-        "top": 0,
-        "left": 640,
-        "width": 640,
-        "height": 360,
-        "label": None
-    }
-]
 
 # =========================
 # PyAV Camera Class
