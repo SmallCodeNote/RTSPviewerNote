@@ -1,0 +1,24 @@
+[
+    {
+        "ip": "192.168.xxx.yyy",
+        "user": "admin",
+        "password": "xxxxx",
+        "path": "",
+        "top": 0,
+        "left": 0,
+        "width": 640,
+        "height": 360,
+        "label": "CAM-1"
+    },
+    {
+        "ip": "192.168.xxx.zzz",
+        "user": "admin",
+        "password": "yyyyy",
+        "path": "11",
+        "top": 0,
+        "left": 640,
+        "width": 640,
+        "height": 360,
+        "label": "CAM-2"
+    }
+]
